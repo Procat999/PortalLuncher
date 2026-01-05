@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Portal - Hybrid Store</title>
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-panel: #1e1e1e;
+            --bg-card: #252525;
+            --accent: #6366f1; /* Indigo */
+            --accent-hover: #4f46e5;
+            --text-main: #f3f4f6;
+            --text-dim: #9ca3af;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --border: #374151;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+
+        /* --- Utility & Layout --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .w-full { width: 100%; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: bold; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* --- Header --- */
+        header {
+            padding: 0.75rem 2rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .search-bar {
+            background: #111;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 99px;
+            width: 300px;
+            transition: all 0.2s;
+        }
+        .search-bar:focus { border-color: var(--accent); outline: none; }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-weight: 600;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: 0.2s;
+        }
+        .nav-btn:hover, .nav-btn.active { color: white; background: rgba(255,255,255,0.05); }
+
+        .points-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        /* --- Main Layout Grid --- */
+        .main-container {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            min-height: calc(100vh - 65px);
+        }
+
+        .sidebar {
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            position: sticky;
+            top: 65px;
+            height: calc(100vh - 65px);
+            overflow-y: auto;
+        }
+
+        .content-area {
+            padding: 2rem;
+            max-width: 1400px;
+        }
+
+        /* --- Filter Sidebar --- */
+        .filter-group { margin-bottom: 1.5rem; }
+        .filter-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.75rem; font-weight: bold; }
+        .filter-opt { display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer; color: var(--text-dim); }
+        .filter-opt:hover { color: white; }
+        .filter-opt input { margin-right: 8px; accent-color: var(--accent); }
+
+        /* --- Game Cards --- */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .game-card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .card-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .card-body { padding: 12px; }
+        
+        .card-title {
+            margin: 0;
+            font-size: 1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .card-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.8rem;
+        }
+
+        .platform-icons { display: flex; gap: 4px; color: var(--text-dim); }
+
+        .price-badge {
+            background: #333;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--success);
+            font-weight: bold;
+        }
+        .price-badge.paid { color: #93c5fd; }
+        .price-badge.owned { color: var(--text-dim); background: transparent; border: 1px solid #444; }
+
+        .discount-tag {
+            background: var(--success);
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 5px;
+        }
+
+        /* --- Sections --- */
+        .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; margin-top: 2rem; }
+        .section-header h2 { margin: 0; font-size: 1.5rem; }
+        .section-line { flex-grow: 1; height: 1px; background: var(--border); }
+
+        /* --- Store Page (Detail View) --- */
+        .store-page { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; animation: fadeIn 0.3s; }
+        .store-header { grid-column: 1 / -1; margin-bottom: 1rem; }
+        .store-banner { width: 100%; height: 300px; object-fit: cover; border-radius: 12px; background: #000; margin-bottom: 1rem; }
+        
+        .store-actions {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .tag-pill {
+            background: #333;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            display: inline-block;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+
+        /* --- Dev Log --- */
+        .dev-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        .dev-avatar { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 4px solid var(--bg-panel); }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .btn-primary { background: var(--accent); color: white; }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: #374151; color: white; }
+        .btn-secondary:hover { background: #4b5563; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: white; }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .modal {
+            background: var(--bg-panel); width: 600px; max-width: 90%;
+            border-radius: 12px; border: 1px solid var(--border);
+            padding: 2rem; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-dim); font-size: 0.9rem; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 10px; background: #000; border: 1px solid var(--border);
+            color: white; border-radius: 6px; box-sizing: border-box;
+        }
+        .form-group input:focus { border-color: var(--accent); outline: none; }
+
+        /* --- Animations --- */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Player Overlay --- */
+        .player-overlay { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; }
+        .player-bar { padding: 10px 20px; background: #111; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        iframe { flex-grow: 1; border: none; }
+    </style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="authScreen" class="modal-overlay hidden">
+    <div class="modal" style="width: 400px; text-align: center;">
+        <h1 style="color: var(--accent); margin-bottom: 5px;">NEXUS PORTAL</h1>
+        <p class="text-dim text-sm" style="margin-bottom: 20px;">Indie Game Hybrid Store</p>
+        <div class="form-group"><input type="text" id="authObjUser" placeholder="Username"></div>
+        <div class="form-group"><input type="password" id="authObjPass" placeholder="Password"></div>
+        <div class="flex flex-col gap-2">
+            <button class="btn btn-primary w-full" onclick="handleAuth('login')">Login</button>
+            <button class="btn btn-secondary w-full" onclick="handleAuth('register')">Create Account</button>
+        </div>
+    </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="hidden">
+    <header class="flex justify-between items-center">
+        <div class="flex items-center gap-4">
+            <div style="font-weight: 900; font-size: 1.4rem; letter-spacing: -1px;">NEXUS</div>
+            <nav class="flex gap-2">
+                <button class="nav-btn active" id="nav-home" onclick="navTo('home')">Store</button>
+                <button class="nav-btn" id="nav-library" onclick="navTo('library')">Library</button>
+            </nav>
+        </div>
+
+        <input type="text" class="search-bar" id="globalSearch" placeholder="Search games, tags, or devs..." oninput="applyFilters()">
+
+        <div class="flex items-center gap-4">
+            <div class="points-badge" id="headerPoints">0 PTS</div>
+            <img id="headerPfp" src="" style="width: 32px; height: 32px; border-radius: 50%; cursor: pointer; object-fit: cover;" onclick="navTo('profile')">
+            <button class="btn btn-secondary text-xs" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <!-- SIDEBAR (Filters) -->
+        <aside class="sidebar" id="sidebar">
+            <div class="filter-group">
+                <div class="filter-title">My Profile</div>
+                <button class="btn btn-primary w-full text-sm" onclick="navTo('profile')">My Dev Log</button>
+                <button class="btn btn-secondary w-full text-sm" style="margin-top: 8px;" onclick="openUploadModal()">+ Upload Game</button>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-title">Platform</div>
+                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="web" checked class="f-platform"> Browser (HTML5)</label>
+                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="win" checked class="f-platform"> Windows</label>
+                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="android" checked class="f-platform"> Android</label>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-title">Price</div>
+                <label class="filter-opt"><input type="radio" name="price" value="all" checked onchange="applyFilters()"> Any Price</label>
+                <label class="filter-opt"><input type="radio" name="price" value="free" onchange="applyFilters()"> Free</label>
+                <label class="filter-opt"><input type="radio" name="price" value="under5k" onchange="applyFilters()"> Under 5k PTS</label>
+                <label class="filter-opt"><input type="radio" name="price" value="over10k" onchange="applyFilters()"> High Value (10k+)</label>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-title">Genres</div>
+                <div id="genreFilters">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <div class="filter-title">Content</div>
+                <label class="filter-opt"><input type="checkbox" id="filter18" onchange="applyFilters()"> Show 18+ Content</label>
+            </div>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <main class="content-area" id="mainContent">
+            <!-- Views injected here -->
+        </main>
+    </div>
+</div>
+
+<!-- GAME PLAYER OVERLAY -->
+<div id="gamePlayer" class="player-overlay hidden">
+    <div class="player-bar">
+        <div class="flex items-center gap-4">
+            <strong id="playTitle">Game Title</strong>
+            <span style="font-family: monospace; color: var(--success);" id="playTimer">00:00</span>
+        </div>
+        <button class="btn btn-danger text-sm" onclick="closePlayer()">Close Game</button>
+    </div>
+    <iframe id="gameFrame" allowfullscreen></iframe>
+</div>
+
+<!-- UPLOAD/EDIT MODAL -->
+<div id="uploadModal" class="modal-overlay hidden">
+    <div class="modal">
+        <h2 id="modalTitle">Upload Project</h2>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Title</label>
+                <input type="text" id="upTitle">
+            </div>
+            <div class="form-group">
+                <label>Genre/Tag</label>
+                <select id="upGenre">
+                    <option value="Action">Action</option>
+                    <option value="RPG">RPG</option>
+                    <option value="Puzzle">Puzzle</option>
+                    <option value="Strategy">Strategy</option>
+                    <option value="Simulation">Simulation</option>
+                    <option value="Horror">Horror</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="upDesc" rows="3"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Thumbnail Image</label>
+                <input type="file" id="upThumb" accept="image/*">
+            </div>
+            <div class="form-group">
+                <label>Icon Image (Square)</label>
+                <input type="file" id="upIcon" accept="image/*">
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Unlock Cost (Points)</label>
+                <input type="number" id="upCost" value="0">
+            </div>
+            <div class="form-group">
+                <label style="margin-top: 25px;"><input type="checkbox" id="up18"> 18+ Content</label>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border); margin: 1rem 0;">
+        <div class="filter-title">Platform & Links</div>
+
+        <div class="form-group">
+            <label>Browser (HTML5 URL)</label>
+            <input type="text" id="upWeb" placeholder="https://...">
+        </div>
+        <div class="form-group">
+            <label>Windows Download URL</label>
+            <input type="text" id="upWin" placeholder="https://...">
+        </div>
+        <div class="form-group">
+            <label>Android Download URL</label>
+            <input type="text" id="upAnd" placeholder="https://...">
+        </div>
+
+        <input type="hidden" id="upId">
+        <div class="flex gap-2" style="margin-top: 1rem;">
+            <button class="btn btn-primary" onclick="saveGame()">Publish Project</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('uploadModal').classList.add('hidden')">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- PROFILE EDIT MODAL -->
+<div id="profileModal" class="modal-overlay hidden">
+    <div class="modal" style="width: 400px;">
+        <h2>Edit Profile</h2>
+        <div class="form-group">
+            <label>Display Name</label>
+            <input type="text" id="profName">
+        </div>
+        <div class="form-group">
+            <label>Bio</label>
+            <textarea id="profBio"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Profile Picture</label>
+            <input type="file" id="profPfpFile" accept="image/*">
+        </div>
+        <div class="form-group">
+            <label><input type="checkbox" id="prof18"> Allow 18+ Content</label>
+        </div>
+        <button class="btn btn-primary w-full" onclick="saveProfile()">Save Profile</button>
+        <button class="btn btn-secondary w-full" style="margin-top: 10px;" onclick="document.getElementById('profileModal').classList.add('hidden')">Cancel</button>
+        <button class="btn btn-danger w-full" style="margin-top: 10px;" onclick="deleteAccount()">Delete Account</button>
+    </div>
+</div>
+
+<script>
+    // --- State & Config ---
+    const GENRES = ['Action', 'RPG', 'Puzzle', 'Strategy', 'Simulation', 'Horror', 'Adventure', 'Arcade'];
+    let state = {
+        users: JSON.parse(localStorage.getItem('nexus_users')) || [],
+        games: JSON.parse(localStorage.getItem('nexus_games')) || [],
+        user: null,
+        sessionStart: 0,
+        playTimer: null
+    };
+
+    // --- Boot ---
+    window.onload = () => {
+        // Init Genres Filter
+        const gContainer = document.getElementById('genreFilters');
+        GENRES.forEach(g => {
+            const label = document.createElement('label');
+            label.className = 'filter-opt';
+            label.innerHTML = `<input type="checkbox" value="${g}" onchange="applyFilters()" class="f-genre"> ${g}`;
+            gContainer.appendChild(label);
+        });
+
+        // Check Auth
+        const uid = localStorage.getItem('nexus_uid');
+        if(uid) {
+            const u = state.users.find(x => x.id === uid);
+            if(u) { login(u); return; }
+        }
+        document.getElementById('authScreen').classList.remove('hidden');
+    }
+
+    // --- Auth Logic ---
+    function handleAuth(mode) {
+        const u = document.getElementById('authObjUser').value.trim();
+        const p = document.getElementById('authObjPass').value.trim();
+        if(!u || !p) return alert("Please fill fields");
+
+        if(mode === 'register') {
+            if(state.users.find(x => x.username === u)) return alert("Taken");
+            const newUser = {
+                id: crypto.randomUUID(),
+                username: u,
+                password: p,
+                displayName: u,
+                bio: 'New Dev',
+                pfp: 'https://via.placeholder.com/80',
+                points: 100,
+                is18: false,
+                unlocked: [], // list of game IDs
+                playtime: {} // gameId: minutes
+            };
+            state.users.push(newUser);
+            saveData();
+            login(newUser);
+        } else {
+            const existing = state.users.find(x => x.username === u && x.password === p);
+            if(!existing) return alert("Invalid credentials");
+            login(existing);
+        }
+    }
+
+    function login(user) {
+        state.user = user;
+        localStorage.setItem('nexus_uid', user.id);
+        document.getElementById('authScreen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+        updateHeader();
+        navTo('home');
+    }
+
+    function logout() {
+        localStorage.removeItem('nexus_uid');
+        location.reload();
+    }
+
+    function updateHeader() {
+        document.getElementById('headerPoints').innerText = `${state.user.points} PTS`;
+        document.getElementById('headerPfp').src = state.user.pfp;
+    }
+
+    function saveData() {
+        localStorage.setItem('nexus_users', JSON.stringify(state.users));
+        localStorage.setItem('nexus_games', JSON.stringify(state.games));
+    }
+
+    // --- Navigation & Routing ---
+    function navTo(page, gameId = null) {
+        // Reset Nav
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        if(page === 'home') document.getElementById('nav-home').classList.add('active');
+        if(page === 'library') document.getElementById('nav-library').classList.add('active');
+
+        // Sidebar Visibility
+        const sidebar = document.getElementById('sidebar');
+        if(page === 'home') sidebar.classList.remove('hidden');
+        else sidebar.classList.add('hidden');
+
+        // Render Content
+        const main = document.getElementById('mainContent');
+        main.innerHTML = '';
+        main.style.gridColumn = page === 'home' ? '2' : '1 / -1'; // Span full if not home
+        
+        if(page === 'home') renderHome(main);
+        else if(page === 'library') renderLibrary(main);
+        else if(page === 'profile') renderProfile(main, gameId || state.user.id); // gameId here acts as userId for other profiles
+        else if(page === 'game') renderGamePage(main, gameId);
+    }
+
+    // --- Rendering ---
+    function renderHome(container) {
+        // We render layout containers, data is filled by applyFilters()
+        container.innerHTML = `
+            <div id="section-new" class="hidden">
+                <div class="section-header"><h2>New Releases</h2><div class="section-line"></div></div>
+                <div class="game-grid" id="grid-new"></div>
+            </div>
+            <div id="section-deals" class="hidden">
+                <div class="section-header"><h2>Special Deals</h2><div class="section-line"></div></div>
+                <div class="game-grid" id="grid-deals"></div>
+            </div>
+            <div class="section-header"><h2>Browse All</h2><div class="section-line"></div></div>
+            <div class="game-grid" id="grid-all"></div>
+        `;
+        applyFilters();
+    }
+
+    function applyFilters() {
+        if(!document.getElementById('grid-all')) return; // Not on home
+
+        const search = document.getElementById('globalSearch').value.toLowerCase();
+        const platforms = Array.from(document.querySelectorAll('.f-platform:checked')).map(c => c.value);
+        const genres = Array.from(document.querySelectorAll('.f-genre:checked')).map(c => c.value);
+        const priceOpt = document.querySelector('input[name="price"]:checked').value;
+        const show18 = document.getElementById('filter18').checked;
+
+        // Filter Logic
+        let filtered = state.games.filter(g => {
+            // 18+ check
+            if(g.is18 && !show18) return false;
+            // Search
+            if(search && !g.title.toLowerCase().includes(search) && !g.tags.some(t=>t.toLowerCase().includes(search))) return false;
+            // Platform
+            if(!platforms.some(p => g.platforms[p])) return false;
+            // Genre (OR logic)
+            if(genres.length > 0 && !genres.includes(g.genre)) return false;
+            // Price
+            if(priceOpt === 'free' && g.cost > 0) return false;
+            if(priceOpt === 'under5k' && g.cost >= 5000) return false;
+            if(priceOpt === 'over10k' && g.cost < 10000) return false;
+            
+            return true;
+        });
+
+        // Populate Grids
+        const gridAll = document.getElementById('grid-all');
+        const gridNew = document.getElementById('grid-new');
+        const gridDeals = document.getElementById('grid-deals');
+        const sectionNew = document.getElementById('section-new');
+        const sectionDeals = document.getElementById('section-deals');
+
+        gridAll.innerHTML = '';
+        gridNew.innerHTML = '';
+        gridDeals.innerHTML = '';
+
+        // Sorting for New Releases (Last 3 uploaded)
+        const newReleases = [...filtered].sort((a,b) => b.created - a.created).slice(0, 4);
+        // "Deals" - Randomly flagged or logic (here just high cost > 0 shown as example or manual tag)
+        const deals = filtered.filter(g => g.cost > 0 && g.cost < 2000); // Cheap games as "deals"
+
+        if(newReleases.length > 0 && !search) {
+            sectionNew.classList.remove('hidden');
+            newReleases.forEach(g => gridNew.appendChild(createGameCard(g)));
+        } else {
+            sectionNew.classList.add('hidden');
+        }
+
+        if(deals.length > 0 && !search) {
+            sectionDeals.classList.remove('hidden');
+            deals.forEach(g => gridDeals.appendChild(createGameCard(g)));
+        } else {
+            sectionDeals.classList.add('hidden');
+        }
+
+        filtered.forEach(g => gridAll.appendChild(createGameCard(g)));
+        if(filtered.length === 0) gridAll.innerHTML = `<p class="text-dim">No games found matching filters.</p>`;
+    }
+
+    function createGameCard(g) {
+        const div = document.createElement('div');
+        div.className = 'game-card';
+        div.onclick = () => navTo('game', g.id);
+
+        const owned = state.user.unlocked.includes(g.id) || g.devId === state.user.id || g.cost === 0;
+        
+        let platformIcons = '';
+        if(g.platforms.win) platformIcons += '<span>Win</span> ';
+        if(g.platforms.android) platformIcons += '<span>And</span> ';
+        if(g.platforms.web) platformIcons += '<span>Web</span>';
+
+        div.innerHTML = `
+            <img class="card-thumb" src="${g.thumbnail || 'https://via.placeholder.com/300x169'}">
+            ${g.is18 ? '<span style="position:absolute;top:5px;right:5px;background:red;color:white;font-size:10px;padding:2px 4px;border-radius:4px;font-weight:bold;">18+</span>' : ''}
+            <div class="card-body">
+                <h4 class="card-title">${g.title}</h4>
+                <div class="card-meta">
+                    <div class="platform-icons text-xs">${platformIcons}</div>
+                    <div class="price-badge ${owned ? 'owned' : 'paid'}">
+                        ${owned ? 'In Library' : g.cost + ' PTS'}
+                    </div>
+                </div>
+            </div>
+        `;
+        return div;
+    }
+
+    function renderGamePage(container, gameId) {
+        const game = state.games.find(g => g.id === gameId);
+        if(!game) return container.innerHTML = "Game not found";
+
+        const dev = state.users.find(u => u.id === game.devId);
+        const owned = state.user.unlocked.includes(game.id) || game.devId === state.user.id || game.cost === 0;
+
+        container.innerHTML = `
+            <div class="store-page">
+                <div class="store-header">
+                    <button class="btn btn-secondary text-sm" onclick="navTo('home')">← Back to Store</button>
+                </div>
+                
+                <div>
+                    <img class="store-banner" src="${game.thumbnail}">
+                    <div class="flex items-center gap-4" style="margin-bottom: 1rem;">
+                        <img src="${game.icon || game.thumbnail}" style="width: 64px; height: 64px; border-radius: 12px; object-fit: cover;">
+                        <div>
+                            <h1 style="margin:0; font-size: 2rem;">${game.title}</h1>
+                            <div class="text-dim">By <a href="#" style="color:var(--accent); text-decoration:none;" onclick="navTo('profile', '${game.devId}')">${dev ? dev.displayName : 'Unknown'}</a></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <span class="tag-pill">${game.genre}</span>
+                        ${game.is18 ? '<span class="tag-pill" style="color:var(--danger)">18+</span>' : ''}
+                    </div>
+
+                    <p style="line-height: 1.6; color: #ddd;">${game.description}</p>
+                </div>
+
+                <div class="store-actions">
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <div style="font-size: 2rem; font-weight: bold; color: ${owned ? 'var(--success)' : 'white'};">
+                            ${owned ? 'Owned' : game.cost + ' PTS'}
+                        </div>
+                    </div>
+
+                    ${!owned ? `
+                        <button class="btn btn-primary w-full" onclick="purchaseGame('${game.id}')">Unlock Game</button>
+                    ` : `
+                        <div class="flex flex-col gap-2">
+                            ${game.platforms.web ? `<button class="btn btn-success w-full" onclick="launchGame('${game.id}')">▶ Play Now</button>` : ''}
+                            ${game.platforms.win ? `<button class="btn btn-secondary w-full" onclick="downloadGame('${game.platforms.win}')">⬇ Download (Windows)</button>` : ''}
+                            ${game.platforms.android ? `<button class="btn btn-secondary w-full" onclick="downloadGame('${game.platforms.android}')">⬇ Download (Android)</button>` : ''}
+                        </div>
+                    `}
+                    
+                    <div style="margin-top: 2rem; font-size: 0.85rem; color: var(--text-dim);">
+                        <div><strong>Platform:</strong> ${Object.keys(game.platforms).filter(k=>game.platforms[k]).join(', ')}</div>
+                        <div><strong>Published:</strong> ${new Date(game.created).toLocaleDateString()}</div>
+                        ${owned && game.devId === state.user.id ? `<button class="btn btn-danger w-full" style="margin-top:20px;" onclick="deleteGame('${game.id}')">Delete Game</button>` : ''}
+                        ${owned && game.devId === state.user.id ? `<button class="btn btn-secondary w-full" style="margin-top:5px;" onclick="editGame('${game.id}')">Edit Details</button>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderLibrary(container) {
+        container.innerHTML = `<h2 class="section-header">My Library</h2><div class="game-grid" id="lib-grid"></div>`;
+        const grid = document.getElementById('lib-grid');
+        
+        const myGames = state.games.filter(g => state.user.unlocked.includes(g.id) || g.devId === state.user.id);
+        
+        if(myGames.length === 0) grid.innerHTML = "No games yet.";
+
+        myGames.forEach(g => {
+            const playtime = state.user.playtime[g.id] || 0;
+            const card = createGameCard(g);
+            // Override meta for library
+            card.querySelector('.card-meta').innerHTML = `
+                <span class="text-xs text-dim">Playtime: ${playtime} min</span>
+                <span class="text-xs text-success">Ready</span>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function renderProfile(container, userId) {
+        const user = state.users.find(u => u.id === userId);
+        if(!user) return container.innerHTML = "User not found";
+        const isMe = state.user.id === userId;
+
+        // Calculate Stats
+        const uploaded = state.games.filter(g => g.devId === userId);
+        const totalPointsEarned = uploaded.reduce((acc, g) => acc + (g.earnings || 0), 0);
+        
+        container.innerHTML = `
+            <div class="dev-header">
+                <img class="dev-avatar" src="${user.pfp}">
+                <div>
+                    <h1 style="margin:0;">${user.displayName}</h1>
+                    <div class="text-dim">${user.bio}</div>
+                    <div class="flex gap-4" style="margin-top: 10px; font-weight: bold; font-size: 0.9rem;">
+                        <span>Games: ${uploaded.length}</span>
+                        <span>Points Earned: ${totalPointsEarned}</span>
+                    </div>
+                </div>
+                ${isMe ? `<button class="btn btn-secondary" style="margin-left:auto;" onclick="openProfileEdit()">Edit Profile</button>` : ''}
+            </div>
+            
+            <h2 class="section-header">Developer Log</h2>
+            <div class="game-grid">
+                ${uploaded.map(g => `
+                    <div class="game-card" onclick="navTo('game', '${g.id}')">
+                        <img class="card-thumb" src="${g.thumbnail}">
+                        <div class="card-body">
+                            <h4 class="card-title">${g.title}</h4>
+                            <div class="text-xs text-dim">Revenue: ${g.earnings || 0} PTS</div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // --- Game Actions ---
+    function purchaseGame(id) {
+        const g = state.games.find(x => x.id === id);
+        if(state.user.points < g.cost) return alert("Not enough points!");
+        if(!confirm(`Unlock for ${g.cost} points?`)) return;
+
+        state.user.points -= g.cost;
+        state.user.unlocked.push(id);
+
+        // Pay Dev
+        const dev = state.users.find(u => u.id === g.devId);
+        if(dev) {
+            dev.points += g.cost;
+            g.earnings = (g.earnings || 0) + g.cost;
+        }
+
+        saveData();
+        updateHeader();
+        navTo('game', id); // refresh
+    }
+
+    function launchGame(id) {
+        const g = state.games.find(x => x.id === id);
+        if(!g.platforms.web) return alert("No web version available.");
+
+        const player = document.getElementById('gamePlayer');
+        const frame = document.getElementById('gameFrame');
+        
+        document.getElementById('playTitle').innerText = g.title;
+        frame.src = g.platforms.web;
+        player.classList.remove('hidden');
+
+        // Playtime Logic
+        let sessionMins = 0;
+        let sessionSecs = 0;
+        clearInterval(state.playTimer);
+        
+        state.playTimer = setInterval(() => {
+            sessionSecs++;
+            if(sessionSecs >= 60) {
+                sessionSecs = 0;
+                sessionMins++;
+                
+                // Add Point & Playtime
+                state.user.points += 1;
+                state.user.playtime[id] = (state.user.playtime[id] || 0) + 1;
+                saveData();
+                updateHeader();
+            }
+            document.getElementById('playTimer').innerText = `${sessionMins}:${sessionSecs.toString().padStart(2,'0')}`;
+        }, 1000);
+    }
+
+    function closePlayer() {
+        clearInterval(state.playTimer);
+        document.getElementById('gamePlayer').classList.add('hidden');
+        document.getElementById('gameFrame').src = '';
+    }
+
+    function downloadGame(url) {
+        if(!url) return alert("Link broken.");
+        window.open(url, '_blank');
+    }
+
+    // --- Upload/Edit Logic ---
+    function openUploadModal(editId = null) {
+        const modal = document.getElementById('uploadModal');
+        modal.classList.remove('hidden');
+        
+        if(editId) {
+            const g = state.games.find(x => x.id === editId);
+            document.getElementById('modalTitle').innerText = "Edit Project";
+            document.getElementById('upId').value = g.id;
+            document.getElementById('upTitle').value = g.title;
+            document.getElementById('upDesc').value = g.description;
+            document.getElementById('upGenre').value = g.genre;
+            document.getElementById('upCost').value = g.cost;
+            document.getElementById('up18').checked = g.is18;
+            document.getElementById('upWeb').value = g.platforms.web || '';
+            document.getElementById('upWin').value = g.platforms.win || '';
+            document.getElementById('upAnd').value = g.platforms.android || '';
+        } else {
+            document.getElementById('modalTitle').innerText = "Upload Project";
+            document.getElementById('upId').value = '';
+            // clear other fields...
+        }
+    }
+
+    async function saveGame() {
+        const id = document.getElementById('upId').value;
+        const fileThumb = document.getElementById('upThumb').files[0];
+        const fileIcon = document.getElementById('upIcon').files[0];
+        
+        // Helper to read file
+        const readFile = (f) => new Promise(r => { 
+            if(!f) return r(null);
+            const reader = new FileReader();
+            reader.onload = () => r(reader.result);
+            reader.readAsDataURL(f);
+        });
+
+        const thumbBase64 = await readFile(fileThumb);
+        const iconBase64 = await readFile(fileIcon);
+
+        const newGame = {
+            id: id || crypto.randomUUID(),
+            devId: state.user.id,
+            created: id ? (state.games.find(g=>g.id===id).created) : Date.now(),
+            title: document.getElementById('upTitle').value,
+            description: document.getElementById('upDesc').value,
+            genre: document.getElementById('upGenre').value,
+            cost: parseInt(document.getElementById('upCost').value),
+            is18: document.getElementById('up18').checked,
+            platforms: {
+                web: document.getElementById('upWeb').value,
+                win: document.getElementById('upWin').value,
+                android: document.getElementById('upAnd').value
+            },
+            tags: [document.getElementById('upGenre').value], // Simple tag impl
+            earnings: id ? (state.games.find(g=>g.id===id).earnings || 0) : 0
+        };
+
+        // If editing and no new image, keep old
+        if(id) {
+            const old = state.games.find(x => x.id === id);
+            newGame.thumbnail = thumbBase64 || old.thumbnail;
+            newGame.icon = iconBase64 || old.icon;
+        } else {
+            newGame.thumbnail = thumbBase64;
+            newGame.icon = iconBase64;
+        }
+
+        if(!newGame.title || (!newGame.platforms.web && !newGame.platforms.win && !newGame.platforms.android)) {
+            return alert("Title and at least one platform link required.");
+        }
+
+        if(id) {
+            const idx = state.games.findIndex(x => x.id === id);
+            state.games[idx] = newGame;
+        } else {
+            state.games.push(newGame);
+        }
+
+        saveData();
+        document.getElementById('uploadModal').classList.add('hidden');
+        navTo('profile'); // go to dev log
+    }
+
+    function deleteGame(id) {
+        if(!confirm("Delete forever?")) return;
+        state.games = state.games.filter(g => g.id !== id);
+        saveData();
+        navTo('profile');
+    }
+    
+    function editGame(id) {
+        document.getElementById('uploadModal').classList.remove('hidden');
+        openUploadModal(id);
+    }
+
+    // --- Profile Edit ---
+    function openProfileEdit() {
+        document.getElementById('profileModal').classList.remove('hidden');
+        document.getElementById('profName').value = state.user.displayName;
+        document.getElementById('profBio').value = state.user.bio;
+        document.getElementById('prof18').checked = state.user.is18;
+    }
+
+    async function saveProfile() {
+        const f = document.getElementById('profPfpFile').files[0];
+        if(f) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                state.user.pfp = reader.result;
+                finalizeProfSave();
+            };
+            reader.readAsDataURL(f);
+        } else {
+            finalizeProfSave();
+        }
+    }
+
+    function finalizeProfSave() {
+        state.user.displayName = document.getElementById('profName').value;
+        state.user.bio = document.getElementById('profBio').value;
+        state.user.is18 = document.getElementById('prof18').checked;
+        saveData();
+        updateHeader();
+        document.getElementById('profileModal').classList.add('hidden');
+        navTo('profile');
+    }
+
+    function deleteAccount() {
+        if(!confirm("Delete account and ALL your games?")) return;
+        state.games = state.games.filter(g => g.devId !== state.user.id);
+        state.users = state.users.filter(u => u.id !== state.user.id);
+        saveData();
+        logout();
+    }
+</script>
+</body>
+</html>
