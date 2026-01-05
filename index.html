@@ -11,603 +11,464 @@ permalink: /
     <title>{{ page.title }}</title>
     <style>
         :root {
-            --bg-dark: #121212;
-            --bg-panel: #1e1e1e;
-            --bg-card: #252525;
-            --accent: #6366f1; /* Indigo */
-            --accent-hover: #4f46e5;
-            --text-main: #f3f4f6;
-            --text-dim: #9ca3af;
+            --bg-dark: #0f172a;
+            --bg-panel: #1e293b;
+            --bg-card: #334155;
+            --accent: #818cf8;
+            --accent-hover: #6366f1;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
             --danger: #ef4444;
-            --success: #10b981;
+            --success: #22c55e;
+            --border: #475569;
             --warning: #f59e0b;
-            --border: #374151;
         }
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: var(--bg-dark);
             color: var(--text-main);
             overflow-x: hidden;
         }
 
-        /* --- Utility & Layout --- */
         .hidden { display: none !important; }
         .flex { display: flex; }
-        .flex-col { flex-direction: column; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
         .gap-2 { gap: 0.5rem; }
-        .gap-4 { gap: 1rem; }
         .w-full { width: 100%; }
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .font-bold { font-weight: bold; }
-        
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
 
-        /* --- Header --- */
-        header {
-            padding: 0.75rem 2rem;
-            background: var(--bg-panel);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        .search-bar {
-            background: #111;
-            border: 1px solid var(--border);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 99px;
-            width: 300px;
-            transition: all 0.2s;
-        }
-        .search-bar:focus { border-color: var(--accent); outline: none; }
-
-        .nav-btn {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            font-weight: 600;
-            cursor: pointer;
-            padding: 8px 12px;
-            border-radius: 6px;
-            transition: 0.2s;
-        }
-        .nav-btn:hover, .nav-btn.active { color: white; background: rgba(255,255,255,0.05); }
-
-        .points-badge {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        }
-
-        /* --- Version Badge --- */
+        /* --- Version & Sync UI --- */
         .version-tag {
             position: fixed;
             bottom: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
             color: var(--text-dim);
-            padding: 4px 10px;
-            border-radius: 6px;
+            padding: 5px 12px;
+            border-radius: 20px;
             font-family: monospace;
             font-size: 0.75rem;
             border: 1px solid var(--border);
             z-index: 100;
-            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        /* --- Main Layout Grid --- */
+        .sync-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+        .sync-indicator.pending { background: var(--warning); animation: pulse 1.5s infinite; }
+
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+
+        /* --- Layout --- */
+        header {
+            padding: 1rem 2rem;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         .main-container {
             display: grid;
-            grid-template-columns: 240px 1fr;
-            min-height: calc(100vh - 65px);
+            grid-template-columns: 260px 1fr;
+            min-height: calc(100vh - 73px);
         }
 
         .sidebar {
             background: var(--bg-panel);
             border-right: 1px solid var(--border);
             padding: 1.5rem;
-            position: sticky;
-            top: 65px;
-            height: calc(100vh - 65px);
-            overflow-y: auto;
         }
 
-        .content-area {
-            padding: 2rem;
-            max-width: 1400px;
-        }
+        .content-area { padding: 2rem; }
 
-        /* --- Filter Sidebar --- */
-        .filter-group { margin-bottom: 1.5rem; }
-        .filter-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-dim); margin-bottom: 0.75rem; font-weight: bold; }
-        .filter-opt { display: flex; align-items: center; margin-bottom: 0.5rem; cursor: pointer; color: var(--text-dim); }
-        .filter-opt:hover { color: white; }
-        .filter-opt input { margin-right: 8px; accent-color: var(--accent); }
-
-        /* --- Game Cards --- */
+        /* --- Cards --- */
         .game-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 1.5rem;
         }
 
         .game-card {
             background: var(--bg-card);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-            position: relative;
-            cursor: pointer;
-        }
-
-        .game-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
-
-        .card-thumb {
-            width: 100%;
-            aspect-ratio: 16/9;
-            object-fit: cover;
-            background: #000;
-        }
-
-        .card-body { padding: 12px; }
-        
-        .card-title {
-            margin: 0;
-            font-size: 1rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .card-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 8px;
-            font-size: 0.8rem;
-        }
-
-        .platform-icons { display: flex; gap: 4px; color: var(--text-dim); }
-
-        .price-badge {
-            background: #333;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--success);
-            font-weight: bold;
-        }
-        .price-badge.paid { color: #93c5fd; }
-        .price-badge.owned { color: var(--text-dim); background: transparent; border: 1px solid #444; }
-
-        /* --- Sections --- */
-        .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; margin-top: 2rem; }
-        .section-header h2 { margin: 0; font-size: 1.5rem; }
-        .section-line { flex-grow: 1; height: 1px; background: var(--border); }
-
-        /* --- Store Page (Detail View) --- */
-        .store-page { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; animation: fadeIn 0.3s; }
-        .store-header { grid-column: 1 / -1; margin-bottom: 1rem; }
-        .store-banner { width: 100%; height: 300px; object-fit: cover; border-radius: 12px; background: #000; margin-bottom: 1rem; }
-        
-        .store-actions {
-            background: var(--bg-card);
-            padding: 1.5rem;
             border-radius: 12px;
-            border: 1px solid var(--border);
-            height: fit-content;
+            overflow: hidden;
+            transition: transform 0.2s;
+            position: relative;
+            border: 1px solid transparent;
         }
+        .game-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+        .card-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #000; }
+        .card-body { padding: 1rem; }
 
-        .tag-pill {
-            background: #333;
-            padding: 4px 10px;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            color: var(--text-dim);
-            display: inline-block;
-            margin-right: 5px;
-            margin-bottom: 5px;
+        .delete-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            z-index: 10;
         }
+        .delete-btn:hover { background: var(--danger); }
 
         /* --- Buttons --- */
         .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
             border: none;
             font-weight: 600;
             cursor: pointer;
             transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            font-size: 0.85rem;
+            display: inline-block;
+            text-align: center;
             text-decoration: none;
         }
         .btn-primary { background: var(--accent); color: white; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-secondary { background: #374151; color: white; }
-        .btn-secondary:hover { background: #4b5563; }
+        .btn-secondary { background: var(--border); color: white; }
         .btn-success { background: var(--success); color: white; }
-        .btn-info { background: #0ea5e9; color: white; }
         .btn-danger { background: var(--danger); color: white; }
 
-        /* --- Modals --- */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            display: flex; justify-content: center; align-items: center; z-index: 1000;
-            backdrop-filter: blur(5px);
-        }
-        .modal {
-            background: var(--bg-panel); width: 600px; max-width: 90%;
-            border-radius: 12px; border: 1px solid var(--border);
-            padding: 2rem; max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
-        }
-        .form-group { margin-bottom: 1rem; }
-        .form-group label { display: block; margin-bottom: 5px; color: var(--text-dim); font-size: 0.9rem; }
-        .form-group input, .form-group textarea, .form-group select {
-            width: 100%; padding: 10px; background: #000; border: 1px solid var(--border);
-            color: white; border-radius: 6px; box-sizing: border-box;
+        /* --- Stats Badge --- */
+        .stats-badge {
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            border: 1px solid var(--border);
         }
 
-        /* --- Player Overlay --- */
-        .player-overlay { position: fixed; inset: 0; background: black; z-index: 2000; display: flex; flex-direction: column; }
-        .player-bar { padding: 10px 20px; background: #111; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
-        iframe { flex-grow: 1; border: none; }
+        /* --- Modal --- */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal {
+            background: var(--bg-panel); padding: 2rem; border-radius: 16px;
+            width: 450px; border: 1px solid var(--border);
+        }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 4px; }
+
+        /* --- Game Player --- */
+        .player-overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; }
+        iframe { flex: 1; border: none; }
     </style>
 </head>
 <body>
 
-<div class="version-tag" id="versionBadge">version 0.1</div>
+<div class="version-tag">
+    <div id="syncStatus" class="sync-indicator"></div>
+    <span id="versionLabel">v0.1</span>
+</div>
 
-<!-- AUTH SCREEN -->
 <div id="authScreen" class="modal-overlay hidden">
-    <div class="modal" style="width: 400px; text-align: center;">
-        <h1 style="color: var(--accent); margin-bottom: 5px;">NEXUS PORTAL</h1>
-        <p class="text-dim text-sm" style="margin-bottom: 20px;">Indie Game Hybrid Store</p>
-        <div class="form-group"><input type="text" id="authObjUser" placeholder="Username"></div>
-        <div class="form-group"><input type="password" id="authObjPass" placeholder="Password"></div>
-        <div class="flex flex-col gap-2">
-            <button class="btn btn-primary w-full" onclick="handleAuth('login')">Login</button>
-            <button class="btn btn-secondary w-full" onclick="handleAuth('register')">Create Account</button>
-        </div>
+    <div class="modal" style="text-align: center;">
+        <h2 style="margin-top:0">Portal Login</h2>
+        <div class="form-group"><input type="text" id="loginUser" placeholder="Username"></div>
+        <div class="form-group"><input type="password" id="loginPass" placeholder="Password"></div>
+        <button class="btn btn-primary w-full" onclick="auth('login')">Login</button>
+        <button class="btn btn-secondary w-full" style="margin-top:8px" onclick="auth('reg')">Register</button>
     </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="app" class="hidden">
-    <header class="flex justify-between items-center">
-        <div class="flex items-center gap-4">
-            <div style="font-weight: 900; font-size: 1.4rem; letter-spacing: -1px;">NEXUS</div>
-            <nav class="flex gap-2">
-                <button class="nav-btn active" id="nav-home" onclick="navTo('home')">Store</button>
-                <button class="nav-btn" id="nav-library" onclick="navTo('library')">Library</button>
-            </nav>
+    <header>
+        <div class="flex items-center gap-2">
+            <span style="font-weight: 800; font-size: 1.2rem;">NEXUS PORTAL</span>
+            <button class="btn btn-secondary" onclick="nav('home')">Store</button>
+            <button class="btn btn-secondary" onclick="nav('lib')">Library</button>
         </div>
-
-        <input type="text" class="search-bar" id="globalSearch" placeholder="Search games..." oninput="applyFilters()">
-
-        <div class="flex items-center gap-4">
-            <div class="points-badge" id="headerPoints">0 PTS</div>
-            <img id="headerPfp" src="" style="width: 32px; height: 32px; border-radius: 50%; cursor: pointer; object-fit: cover;" onclick="navTo('profile')">
-            <button class="btn btn-secondary text-xs" onclick="logout()">Logout</button>
+        <div class="flex items-center gap-2">
+            <div id="pointsDisplay" style="color: var(--success); font-weight: bold;">0 PTS</div>
+            <button class="btn btn-secondary" onclick="logout()">Logout</button>
         </div>
     </header>
 
     <div class="main-container">
-        <!-- SIDEBAR -->
-        <aside class="sidebar" id="sidebar">
-            <div class="filter-group">
-                <div class="filter-title">My Profile</div>
-                <button class="btn btn-primary w-full text-sm" onclick="navTo('profile')">My Dev Log</button>
-                <button class="btn btn-secondary w-full text-sm" style="margin-top: 8px;" onclick="openUploadModal()">+ Upload Game</button>
-            </div>
-
-            <!-- Host Tools -->
-            <div class="filter-group" style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
-                <div class="filter-title" style="margin-bottom: 5px;">Host Controls</div>
-                <div class="flex items-center justify-between" style="margin-bottom: 10px;">
-                    <span class="text-xs text-dim">Current Ver:</span>
-                    <span class="text-xs font-bold" id="currentVerDisplay">0.1</span>
+        <aside class="sidebar">
+            <div style="margin-bottom: 2rem;">
+                <p style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Admin Tools</p>
+                <button class="btn btn-primary w-full" onclick="openUpload()">+ Upload Game</button>
+                
+                <div class="stats-badge">
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">Total Games</span>
+                    <span id="gameCount" style="font-weight: bold; font-size: 0.8rem;">0</span>
                 </div>
-                <button class="btn btn-success w-full text-xs" style="margin-bottom: 5px;" onclick="updateVersion()">Update Version (+0.1)</button>
-                <button class="btn btn-info w-full text-xs" onclick="exportStoreData()">Export Store JSON</button>
-            </div>
 
-            <div class="filter-group">
-                <div class="filter-title">Platform</div>
-                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="web" checked class="f-platform"> Browser</label>
-                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="win" checked class="f-platform"> Windows</label>
-                <label class="filter-opt"><input type="checkbox" onchange="applyFilters()" value="android" checked class="f-platform"> Android</label>
+                <div id="syncBox" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid var(--success);">
+                    <p style="font-size: 0.75rem; margin: 0 0 8px 0;">Changes ready to sync!</p>
+                    <button class="btn btn-success w-full text-xs" onclick="exportStore()">Commit & Sync JSON</button>
+                </div>
             </div>
+            
+            <p style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Status</p>
+            <div id="serverStatus" class="text-xs" style="color: var(--text-dim);">Checking server...</div>
         </aside>
 
-        <main class="content-area" id="mainContent">
-            <!-- Content Injected Here -->
+        <main class="content-area">
+            <div id="viewTitle"><h2>All Games</h2></div>
+            <div id="gameGrid" class="game-grid"></div>
         </main>
     </div>
 </div>
 
-<!-- PLAYER OVERLAY -->
-<div id="gamePlayer" class="player-overlay hidden">
-    <div class="player-bar">
-        <strong id="playTitle">Game Title</strong>
-        <span id="playTimer">00:00</span>
-        <button class="btn btn-danger text-sm" onclick="closePlayer()">Close</button>
-    </div>
-    <iframe id="gameFrame"></iframe>
-</div>
-
-<!-- MODALS -->
 <div id="uploadModal" class="modal-overlay hidden">
     <div class="modal">
-        <h2>Publish Project</h2>
+        <h3 id="modalTitle">Publish Game</h3>
         <div class="form-group"><label>Title</label><input type="text" id="upTitle"></div>
-        <div class="form-group"><label>Genre</label><input type="text" id="upGenre"></div>
-        <div class="form-group"><label>Description</label><textarea id="upDesc"></textarea></div>
-        <div class="form-group"><label>Thumbnail</label><input type="file" id="upThumb" accept="image/*"></div>
-        <div class="form-group"><label>Cost (Points)</label><input type="number" id="upCost" value="0"></div>
-        <div class="form-group"><label>Browser URL</label><input type="text" id="upWeb"></div>
-        <div class="form-group"><label>Windows URL</label><input type="text" id="upWin"></div>
-        <div class="form-group"><label>Android URL</label><input type="text" id="upAnd"></div>
-        <div class="flex gap-2">
-            <button class="btn btn-primary" onclick="saveGame()">Publish</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('uploadModal').classList.add('hidden')">Cancel</button>
+        <div class="form-group"><label>Cost (PTS)</label><input type="number" id="upCost" value="0"></div>
+        <div class="form-group"><label>Thumbnail URL</label><input type="text" id="upThumb"></div>
+        <div class="form-group">
+            <label>Platform Type</label>
+            <select id="upType">
+                <option value="web">Web (Play in browser)</option>
+                <option value="pc">Windows (Download)</option>
+                <option value="android">Android (Download)</option>
+            </select>
         </div>
+        <div class="form-group"><label>URL (Play or Download Link)</label><input type="text" id="upWeb"></div>
+        <button class="btn btn-primary w-full" onclick="saveGame()">Save Locally</button>
+        <button class="btn btn-secondary w-full" style="margin-top:8px" onclick="closeModal()">Cancel</button>
     </div>
+</div>
+
+<div id="player" class="player-overlay hidden">
+    <div style="padding: 10px; background: #1e293b; display: flex; justify-content: space-between;">
+        <span id="nowPlaying">Game</span>
+        <button class="btn btn-danger" onclick="closePlayer()">Exit</button>
+    </div>
+    <iframe id="gameIframe"></iframe>
 </div>
 
 <script>
     let state = {
-        users: JSON.parse(localStorage.getItem('nexus_users')) || [],
-        games: JSON.parse(localStorage.getItem('nexus_games')) || [],
-        version: parseFloat(localStorage.getItem('nexus_version')) || 0.1,
+        users: JSON.parse(localStorage.getItem('np_users')) || [],
+        games: JSON.parse(localStorage.getItem('np_games')) || [],
+        version: parseFloat(localStorage.getItem('np_ver')) || 0.1,
         user: null,
-        playTimer: null
+        hasPendingChanges: false
     };
 
     window.onload = async () => {
-        updateVersionDisplay();
-        await loadServerData();
-        const uid = localStorage.getItem('nexus_uid');
-        if(uid) {
-            const u = state.users.find(x => x.id === uid);
-            if(u) { login(u); return; }
-        }
-        document.getElementById('authScreen').classList.remove('hidden');
-    }
+        updateVersionUI();
+        updateGameCount();
+        await checkRemote();
+        const logged = localStorage.getItem('np_logged');
+        if(logged) {
+            state.user = state.users.find(u => u.id === logged);
+            if(state.user) startApp();
+            else showAuth();
+        } else showAuth();
+    };
 
-    // --- Versioning Logic ---
-    function updateVersion() {
-        state.version = parseFloat((state.version + 0.1).toFixed(1));
-        localStorage.setItem('nexus_version', state.version);
-        updateVersionDisplay();
-    }
-
-    function updateVersionDisplay() {
-        const text = `version ${state.version}`;
-        document.getElementById('versionBadge').innerText = text;
-        const display = document.getElementById('currentVerDisplay');
-        if(display) display.innerText = state.version;
-    }
-
-    async function loadServerData() {
+    // --- Sync Logic ---
+    async function checkRemote() {
+        const status = document.getElementById('serverStatus');
         try {
-            const response = await fetch('store.json');
-            if(response.ok) {
-                const data = await response.json();
-                if(data.version) {
-                    state.version = data.version;
-                    updateVersionDisplay();
+            const res = await fetch('store.json');
+            if(res.ok) {
+                const remote = await res.json();
+                if(remote.version > state.version) {
+                    status.innerHTML = `<span style="color:var(--accent)">New version available (v${remote.version})!</span><br><button class="btn btn-primary text-xs w-full mt-1" onclick="syncWithRemote()">Update Now</button>`;
+                } else {
+                    status.innerText = "Synchronized with GitHub Pages.";
                 }
-                if(data.games) {
-                    data.games.forEach(sg => {
-                        if(!state.games.find(g => g.id === sg.id)) state.games.push(sg);
-                    });
-                    saveData();
-                }
+            } else {
+                status.innerText = "Standalone mode (No store.json found).";
             }
-        } catch (e) {}
+        } catch(e) { status.innerText = "Offline / Local Mode."; }
     }
 
-    function exportStoreData() {
-        const exportObj = { version: state.version, games: state.games };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
-        const dl = document.createElement('a');
-        dl.setAttribute("href", dataStr);
-        dl.setAttribute("download", "store.json");
-        dl.click();
+    function syncWithRemote() {
+        fetch('store.json').then(r => r.json()).then(data => {
+            state.version = data.version;
+            state.games = data.games; 
+            localStorage.setItem('np_ver', state.version);
+            save();
+            location.reload();
+        });
     }
 
-    // --- Core Funcs ---
-    function handleAuth(mode) {
-        const u = document.getElementById('authObjUser').value.trim();
-        const p = document.getElementById('authObjPass').value.trim();
-        if(!u || !p) return;
-        if(mode === 'register') {
-            const newUser = { id: crypto.randomUUID(), username: u, password: p, displayName: u, pfp: 'https://via.placeholder.com/80', points: 100, unlocked: [], playtime: {} };
-            state.users.push(newUser);
-            saveData();
-            login(newUser);
-        } else {
-            const existing = state.users.find(x => x.username === u && x.password === p);
-            if(existing) login(existing);
-        }
+    function exportStore() {
+        state.version = parseFloat((state.version + 0.1).toFixed(1));
+        state.hasPendingChanges = false;
+        localStorage.setItem('np_ver', state.version);
+        save();
+        
+        const blob = new Blob([JSON.stringify({ version: state.version, games: state.games }, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'store.json';
+        a.click();
+        
+        alert(`Version bumped to ${state.version}!\n\nUpdate your 'store.json' on GitHub.`);
+        updateVersionUI();
+        document.getElementById('syncBox').classList.add('hidden');
     }
 
-    function login(user) {
-        state.user = user;
-        localStorage.setItem('nexus_uid', user.id);
+    // --- Core App ---
+    function updateGameCount() {
+        const counter = document.getElementById('gameCount');
+        if(counter) counter.innerText = state.games.length;
+    }
+
+    function showAuth() { document.getElementById('authScreen').classList.remove('hidden'); }
+    function startApp() {
         document.getElementById('authScreen').classList.add('hidden');
         document.getElementById('app').classList.remove('hidden');
-        updateHeader();
-        navTo('home');
-        updateVersionDisplay();
+        document.getElementById('pointsDisplay').innerText = `${state.user.points} PTS`;
+        renderGames();
     }
 
-    function logout() { localStorage.removeItem('nexus_uid'); location.reload(); }
-    function updateHeader() {
-        document.getElementById('headerPoints').innerText = `${state.user.points} PTS`;
-        document.getElementById('headerPfp').src = state.user.pfp;
-    }
-    function saveData() {
-        localStorage.setItem('nexus_users', JSON.stringify(state.users));
-        localStorage.setItem('nexus_games', JSON.stringify(state.games));
-    }
-
-    function navTo(page, gameId = null) {
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        const main = document.getElementById('mainContent');
-        const sidebar = document.getElementById('sidebar');
-        sidebar.classList.toggle('hidden', page !== 'home');
-        main.style.gridColumn = page === 'home' ? '2' : '1 / -1';
-        
-        if(page === 'home') {
-            document.getElementById('nav-home').classList.add('active');
-            renderHome(main);
-        } else if(page === 'library') {
-            document.getElementById('nav-library').classList.add('active');
-            renderLibrary(main);
-        } else if(page === 'game') {
-            renderGamePage(main, gameId);
-        } else if(page === 'profile') {
-            renderProfile(main, gameId || state.user.id);
+    function auth(type) {
+        const u = document.getElementById('loginUser').value;
+        const p = document.getElementById('loginPass').value;
+        if(type === 'reg') {
+            const newUser = { id: crypto.randomUUID(), user: u, pass: p, points: 100, library: [] };
+            state.users.push(newUser);
+            state.user = newUser;
+        } else {
+            state.user = state.users.find(x => x.user === u && x.pass === p);
         }
+        if(state.user) {
+            localStorage.setItem('np_logged', state.user.id);
+            save(); startApp();
+        } else alert("Invalid credentials");
     }
 
-    function renderHome(container) {
-        container.innerHTML = `
-            <div class="section-header"><h2>Browse Games</h2><div class="section-line"></div></div>
-            <div class="game-grid" id="grid-all"></div>
-        `;
-        applyFilters();
-    }
-
-    function applyFilters() {
-        const search = document.getElementById('globalSearch').value.toLowerCase();
-        const grid = document.getElementById('grid-all');
-        if(!grid) return;
+    function renderGames() {
+        const grid = document.getElementById('gameGrid');
         grid.innerHTML = '';
-        state.games.filter(g => g.title.toLowerCase().includes(search)).forEach(g => {
+        state.games.forEach(g => {
+            const owned = state.user.library.includes(g.id) || g.cost === 0;
+            const isOwner = g.ownerId === state.user.id;
+            
+            // Dynamic Button Label
+            let btnLabel = "Unlock";
+            if (owned) {
+                if (g.type === 'web') btnLabel = "Play Game";
+                else if (g.type === 'android' || g.type === 'pc') btnLabel = "Download";
+            }
+
             const card = document.createElement('div');
             card.className = 'game-card';
-            card.onclick = () => navTo('game', g.id);
             card.innerHTML = `
-                <img class="card-thumb" src="${g.thumbnail || ''}">
+                ${isOwner ? `<button class="delete-btn" onclick="deleteGame('${g.id}')">Delete</button>` : ''}
+                <img class="card-thumb" src="${g.thumb || 'https://via.placeholder.com/200'}">
                 <div class="card-body">
-                    <h4 class="card-title">${g.title}</h4>
-                    <div class="card-meta"><span class="price-badge">${g.cost} PTS</span></div>
+                    <div class="flex justify-between items-center">
+                        <strong title="${g.type.toUpperCase()}">${g.title}</strong>
+                        <span style="font-size:0.8rem; color:var(--success)">${owned ? 'OWNED' : g.cost+' PTS'}</span>
+                    </div>
+                    <button class="btn btn-primary w-full" style="margin-top:10px" onclick="handleAction('${g.id}')">
+                        ${btnLabel}
+                    </button>
                 </div>
             `;
             grid.appendChild(card);
         });
+        updateGameCount();
     }
 
-    function renderGamePage(container, id) {
+    function deleteGame(id) {
+        if(!confirm("Are you sure you want to delete this game?")) return;
+        state.games = state.games.filter(g => g.id !== id);
+        state.hasPendingChanges = true;
+        save();
+        renderGames();
+        updateVersionUI();
+    }
+
+    function handleAction(id) {
         const g = state.games.find(x => x.id === id);
-        const owned = state.user.unlocked.includes(id) || g.devId === state.user.id || g.cost === 0;
-        container.innerHTML = `
-            <div class="store-page">
-                <div>
-                    <img class="store-banner" src="${g.thumbnail}">
-                    <h1>${g.title}</h1>
-                    <p>${g.description}</p>
-                </div>
-                <div class="store-actions">
-                    <h2>${owned ? 'Owned' : g.cost + ' PTS'}</h2>
-                    ${owned ? `
-                        <button class="btn btn-success w-full" onclick="launchGame('${g.id}')">Play Now</button>
-                    ` : `
-                        <button class="btn btn-primary w-full" onclick="purchaseGame('${g.id}')">Unlock</button>
-                    `}
-                    <button class="btn btn-secondary w-full" style="margin-top:10px" onclick="navTo('home')">Back</button>
-                </div>
-            </div>
-        `;
+        const owned = state.user.library.includes(id) || g.cost === 0;
+
+        if(owned) {
+            if(g.type === 'web') {
+                document.getElementById('nowPlaying').innerText = g.title;
+                document.getElementById('gameIframe').src = g.web;
+                document.getElementById('player').classList.remove('hidden');
+            } else {
+                // Download behavior
+                const a = document.createElement('a');
+                a.href = g.web;
+                a.target = "_blank";
+                a.click();
+            }
+        } else {
+            if(state.user.points >= g.cost) {
+                state.user.points -= g.cost;
+                state.user.library.push(id);
+                save(); startApp();
+            } else alert("Not enough PTS");
+        }
     }
 
-    function purchaseGame(id) {
-        const g = state.games.find(x => x.id === id);
-        if(state.user.points >= g.cost) {
-            state.user.points -= g.cost;
-            state.user.unlocked.push(id);
-            saveData(); updateHeader(); navTo('game', id);
-        } else { alert("Not enough points!"); }
-    }
+    function saveGame() {
+        const title = document.getElementById('upTitle').value;
+        const web = document.getElementById('upWeb').value;
+        if(!title || !web) return alert("Title and URL required");
 
-    function launchGame(id) {
-        const g = state.games.find(x => x.id === id);
-        if(!g.platforms.web) return alert("No web version.");
-        document.getElementById('playTitle').innerText = g.title;
-        document.getElementById('gameFrame').src = g.platforms.web;
-        document.getElementById('gamePlayer').classList.remove('hidden');
-    }
-
-    function closePlayer() {
-        document.getElementById('gamePlayer').classList.add('hidden');
-        document.getElementById('gameFrame').src = '';
-    }
-
-    function openUploadModal() { document.getElementById('uploadModal').classList.remove('hidden'); }
-
-    async function saveGame() {
-        const thumb = document.getElementById('upThumb').files[0];
-        const reader = new FileReader();
-        const process = (imgData) => {
-            const g = {
-                id: crypto.randomUUID(), devId: state.user.id, created: Date.now(),
-                title: document.getElementById('upTitle').value,
-                description: document.getElementById('upDesc').value,
-                cost: parseInt(document.getElementById('upCost').value),
-                thumbnail: imgData,
-                platforms: {
-                    web: document.getElementById('upWeb').value,
-                    win: document.getElementById('upWin').value,
-                    android: document.getElementById('upAnd').value
-                }
-            };
-            state.games.push(g); saveData();
-            document.getElementById('uploadModal').classList.add('hidden');
-            navTo('home');
+        const g = {
+            id: crypto.randomUUID(),
+            ownerId: state.user.id,
+            title: title,
+            cost: parseInt(document.getElementById('upCost').value) || 0,
+            thumb: document.getElementById('upThumb').value,
+            type: document.getElementById('upType').value,
+            web: web
         };
-        if(thumb) { reader.onload = () => process(reader.result); reader.readAsDataURL(thumb); }
-        else process('');
+        state.games.push(g);
+        state.hasPendingChanges = true;
+        save();
+        closeModal();
+        renderGames();
+        updateVersionUI();
     }
 
-    function renderLibrary(container) {
-        container.innerHTML = `<h2>My Library</h2><div class="game-grid" id="lib-grid"></div>`;
-        state.games.filter(g => state.user.unlocked.includes(g.id) || g.devId === state.user.id).forEach(g => {
-            const card = document.createElement('div');
-            card.className = 'game-card';
-            card.onclick = () => navTo('game', g.id);
-            card.innerHTML = `<img class="card-thumb" src="${g.thumbnail}"><div class="card-body"><h4>${g.title}</h4></div>`;
-            document.getElementById('lib-grid').appendChild(card);
-        });
+    function updateVersionUI() {
+        document.getElementById('versionLabel').innerText = `v${state.version}`;
+        const indicator = document.getElementById('syncStatus');
+        const syncBox = document.getElementById('syncBox');
+        if(state.hasPendingChanges) {
+            indicator.classList.add('pending');
+            if(syncBox) syncBox.classList.remove('hidden');
+        } else {
+            indicator.classList.remove('pending');
+            if(syncBox) syncBox.classList.add('hidden');
+        }
     }
 
-    function renderProfile(container, uid) {
-        const u = state.users.find(x => x.id === uid);
-        container.innerHTML = `<h1>${u.displayName}</h1><p>Member since 2024</p><button class="btn btn-secondary" onclick="navTo('home')">Back</button>`;
+    function save() {
+        localStorage.setItem('np_users', JSON.stringify(state.users));
+        localStorage.setItem('np_games', JSON.stringify(state.games));
     }
+    function logout() { localStorage.removeItem('np_logged'); location.reload(); }
+    function nav(v) { renderGames(); }
+    function openUpload() { document.getElementById('uploadModal').classList.remove('hidden'); }
+    function closeModal() { document.getElementById('uploadModal').classList.add('hidden'); }
+    function closePlayer() { document.getElementById('player').classList.add('hidden'); document.getElementById('gameIframe').src = ''; }
 </script>
+
 </body>
 </html>
