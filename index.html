@@ -76,7 +76,19 @@ permalink: /
             display: flex;
             justify-content: space-between;
             align-items: center;
+            position: sticky; top: 0; z-index: 50;
         }
+
+        .search-bar {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 99px;
+            width: 250px;
+            outline: none;
+        }
+        .search-bar:focus { border-color: var(--accent); }
 
         .main-container {
             display: grid;
@@ -88,6 +100,8 @@ permalink: /
             background: var(--bg-panel);
             border-right: 1px solid var(--border);
             padding: 1.5rem;
+            height: calc(100vh - 73px);
+            position: sticky; top: 73px;
         }
 
         .content-area { padding: 2rem; }
@@ -115,7 +129,7 @@ permalink: /
             position: absolute;
             top: 8px;
             right: 8px;
-            background: rgba(239, 68, 68, 0.8);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
             border: none;
             border-radius: 4px;
@@ -124,7 +138,6 @@ permalink: /
             cursor: pointer;
             z-index: 10;
         }
-        .delete-btn:hover { background: var(--danger); }
 
         /* --- Buttons --- */
         .btn {
@@ -135,16 +148,21 @@ permalink: /
             cursor: pointer;
             transition: 0.2s;
             font-size: 0.85rem;
-            display: inline-block;
-            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             text-decoration: none;
         }
         .btn-primary { background: var(--accent); color: white; }
         .btn-secondary { background: var(--border); color: white; }
+        .btn-secondary.active { background: var(--accent); }
         .btn-success { background: var(--success); color: white; }
         .btn-danger { background: var(--danger); color: white; }
 
-        /* --- Stats Badge --- */
+        /* --- Sidebar UI --- */
+        .sidebar-section { margin-bottom: 2rem; }
+        .section-label { font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.75rem; font-weight: bold; }
+        
         .stats-badge {
             display: flex;
             justify-content: space-between;
@@ -155,10 +173,11 @@ permalink: /
             border: 1px solid var(--border);
         }
 
-        /* --- Modal --- */
+        /* --- Modals --- */
         .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
             display: flex; justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(4px);
         }
         .modal {
             background: var(--bg-panel); padding: 2rem; border-radius: 16px;
@@ -166,7 +185,7 @@ permalink: /
         }
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
-        .form-group input, .form-group select { width: 100%; padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; background: var(--bg-dark); border: 1px solid var(--border); color: white; border-radius: 6px; }
 
         /* --- Game Player --- */
         .player-overlay { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; }
@@ -182,79 +201,87 @@ permalink: /
 
 <div id="authScreen" class="modal-overlay hidden">
     <div class="modal" style="text-align: center;">
-        <h2 style="margin-top:0">Portal Login</h2>
+        <h2 style="margin-top:0; color: var(--accent);">NEXUS PORTAL</h2>
         <div class="form-group"><input type="text" id="loginUser" placeholder="Username"></div>
         <div class="form-group"><input type="password" id="loginPass" placeholder="Password"></div>
         <button class="btn btn-primary w-full" onclick="auth('login')">Login</button>
-        <button class="btn btn-secondary w-full" style="margin-top:8px" onclick="auth('reg')">Register</button>
+        <button class="btn btn-secondary w-full" style="margin-top:8px" onclick="auth('reg')">Create Account</button>
     </div>
 </div>
 
 <div id="app" class="hidden">
     <header>
         <div class="flex items-center gap-2">
-            <span style="font-weight: 800; font-size: 1.2rem;">NEXUS PORTAL</span>
-            <button class="btn btn-secondary" onclick="nav('home')">Store</button>
-            <button class="btn btn-secondary" onclick="nav('lib')">Library</button>
+            <span style="font-weight: 900; font-size: 1.4rem; letter-spacing: -1px; margin-right: 1rem;">NEXUS</span>
+            <button class="btn btn-secondary nav-btn active" id="btn-home" onclick="nav('home')">Store</button>
+            <button class="btn btn-secondary nav-btn" id="btn-lib" onclick="nav('lib')">Library</button>
         </div>
+
+        <input type="text" class="search-bar" id="searchInput" placeholder="Search games..." oninput="renderGames()">
+
         <div class="flex items-center gap-2">
-            <div id="pointsDisplay" style="color: var(--success); font-weight: bold;">0 PTS</div>
-            <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            <div id="pointsDisplay" style="color: var(--success); font-weight: bold; margin-right: 10px;">100 PTS</div>
+            <button class="btn btn-secondary" style="padding: 5px;" onclick="nav('profile')">Profile</button>
+            <button class="btn btn-danger" style="padding: 5px;" onclick="logout()">Logout</button>
         </div>
     </header>
 
     <div class="main-container">
         <aside class="sidebar">
-            <div style="margin-bottom: 2rem;">
-                <p style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Admin Tools</p>
+            <div class="sidebar-section">
+                <p class="section-label">Dev Panel</p>
                 <button class="btn btn-primary w-full" onclick="openUpload()">+ Upload Game</button>
                 
                 <div class="stats-badge">
-                    <span style="font-size: 0.75rem; color: var(--text-dim);">Total Games</span>
+                    <span style="font-size: 0.75rem; color: var(--text-dim);">Store Games</span>
                     <span id="gameCount" style="font-weight: bold; font-size: 0.8rem;">0</span>
                 </div>
 
                 <div id="syncBox" class="hidden" style="margin-top: 10px; padding: 10px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid var(--success);">
-                    <p style="font-size: 0.75rem; margin: 0 0 8px 0;">Changes ready to sync!</p>
+                    <p style="font-size: 0.7rem; margin: 0 0 8px 0; color: var(--success);">Pending Changes!</p>
                     <button class="btn btn-success w-full text-xs" onclick="exportStore()">Commit & Sync JSON</button>
                 </div>
             </div>
             
-            <p style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Status</p>
-            <div id="serverStatus" class="text-xs" style="color: var(--text-dim);">Checking server...</div>
+            <div class="sidebar-section">
+                <p class="section-label">System Status</p>
+                <div id="serverStatus" class="text-xs" style="color: var(--text-dim); line-height: 1.4;">Checking server...</div>
+            </div>
         </aside>
 
         <main class="content-area">
-            <div id="viewTitle"><h2>All Games</h2></div>
+            <div id="viewTitle"><h2 style="margin-top:0">Browse Store</h2></div>
             <div id="gameGrid" class="game-grid"></div>
         </main>
     </div>
 </div>
 
+<!-- Upload Modal -->
 <div id="uploadModal" class="modal-overlay hidden">
     <div class="modal">
-        <h3 id="modalTitle">Publish Game</h3>
-        <div class="form-group"><label>Title</label><input type="text" id="upTitle"></div>
+        <h3 style="margin-top:0">Publish New Game</h3>
+        <div class="form-group"><label>Title</label><input type="text" id="upTitle" placeholder="My Awesome Game"></div>
         <div class="form-group"><label>Cost (PTS)</label><input type="number" id="upCost" value="0"></div>
-        <div class="form-group"><label>Thumbnail URL</label><input type="text" id="upThumb"></div>
+        <div class="form-group"><label>Thumbnail URL</label><input type="text" id="upThumb" placeholder="https://..."></div>
         <div class="form-group">
-            <label>Platform Type</label>
+            <label>Platform</label>
             <select id="upType">
-                <option value="web">Web (Play in browser)</option>
+                <option value="web">Browser (Playable)</option>
                 <option value="pc">Windows (Download)</option>
                 <option value="android">Android (Download)</option>
             </select>
         </div>
-        <div class="form-group"><label>URL (Play or Download Link)</label><input type="text" id="upWeb"></div>
-        <button class="btn btn-primary w-full" onclick="saveGame()">Save Locally</button>
+        <div class="form-group"><label>Direct Link</label><input type="text" id="upWeb" placeholder="https://..."></div>
+        <button class="btn btn-primary w-full" onclick="saveGame()">Publish Locally</button>
         <button class="btn btn-secondary w-full" style="margin-top:8px" onclick="closeModal()">Cancel</button>
     </div>
 </div>
 
+<!-- Game Player -->
 <div id="player" class="player-overlay hidden">
-    <div style="padding: 10px; background: #1e293b; display: flex; justify-content: space-between;">
-        <span id="nowPlaying">Game</span>
-        <button class="btn btn-danger" onclick="closePlayer()">Exit</button>
+    <div style="padding: 10px; background: #1e293b; display: flex; justify-content: space-between; align-items: center;">
+        <span id="nowPlaying" style="font-weight: bold;">Game Title</span>
+        <button class="btn btn-danger" style="padding: 5px 15px;" onclick="closePlayer()">Close</button>
     </div>
     <iframe id="gameIframe"></iframe>
 </div>
@@ -265,6 +292,7 @@ permalink: /
         games: JSON.parse(localStorage.getItem('np_games')) || [],
         version: parseFloat(localStorage.getItem('np_ver')) || 0.1,
         user: null,
+        currentView: 'home',
         hasPendingChanges: false
     };
 
@@ -275,12 +303,11 @@ permalink: /
         const logged = localStorage.getItem('np_logged');
         if(logged) {
             state.user = state.users.find(u => u.id === logged);
-            if(state.user) startApp();
-            else showAuth();
+            if(state.user) startApp(); else showAuth();
         } else showAuth();
     };
 
-    // --- Sync Logic ---
+    // --- Sync & Versioning ---
     async function checkRemote() {
         const status = document.getElementById('serverStatus');
         try {
@@ -288,20 +315,18 @@ permalink: /
             if(res.ok) {
                 const remote = await res.json();
                 if(remote.version > state.version) {
-                    status.innerHTML = `<span style="color:var(--accent)">New version available (v${remote.version})!</span><br><button class="btn btn-primary text-xs w-full mt-1" onclick="syncWithRemote()">Update Now</button>`;
+                    status.innerHTML = `<span style="color:var(--accent)">Update Found (v${remote.version})</span><br><button class="btn btn-primary text-xs w-full mt-2" onclick="syncWithRemote()">Update Client</button>`;
                 } else {
-                    status.innerText = "Synchronized with GitHub Pages.";
+                    status.innerText = "Version is up to date with server.";
                 }
-            } else {
-                status.innerText = "Standalone mode (No store.json found).";
-            }
-        } catch(e) { status.innerText = "Offline / Local Mode."; }
+            } else status.innerText = "Standalone Local Mode.";
+        } catch(e) { status.innerText = "Local Storage Mode."; }
     }
 
     function syncWithRemote() {
         fetch('store.json').then(r => r.json()).then(data => {
             state.version = data.version;
-            state.games = data.games; 
+            state.games = data.games;
             localStorage.setItem('np_ver', state.version);
             save();
             location.reload();
@@ -309,6 +334,7 @@ permalink: /
     }
 
     function exportStore() {
+        // Version ONLY increases here
         state.version = parseFloat((state.version + 0.1).toFixed(1));
         state.hasPendingChanges = false;
         localStorage.setItem('np_ver', state.version);
@@ -321,17 +347,11 @@ permalink: /
         a.download = 'store.json';
         a.click();
         
-        alert(`Version bumped to ${state.version}!\n\nUpdate your 'store.json' on GitHub.`);
+        alert("Success! Downloaded store.json. Upload this to your GitHub repository to update the public site.");
         updateVersionUI();
-        document.getElementById('syncBox').classList.add('hidden');
     }
 
-    // --- Core App ---
-    function updateGameCount() {
-        const counter = document.getElementById('gameCount');
-        if(counter) counter.innerText = state.games.length;
-    }
-
+    // --- Core App Functionality ---
     function showAuth() { document.getElementById('authScreen').classList.remove('hidden'); }
     function startApp() {
         document.getElementById('authScreen').classList.add('hidden');
@@ -343,6 +363,7 @@ permalink: /
     function auth(type) {
         const u = document.getElementById('loginUser').value;
         const p = document.getElementById('loginPass').value;
+        if(!u || !p) return alert("Enter credentials");
         if(type === 'reg') {
             const newUser = { id: crypto.randomUUID(), user: u, pass: p, points: 100, library: [] };
             state.users.push(newUser);
@@ -353,50 +374,66 @@ permalink: /
         if(state.user) {
             localStorage.setItem('np_logged', state.user.id);
             save(); startApp();
-        } else alert("Invalid credentials");
+        } else alert("Invalid Login");
+    }
+
+    function nav(view) {
+        state.currentView = view;
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + (view === 'home' ? 'home' : 'lib')).classList.add('active');
+        
+        const title = document.getElementById('viewTitle');
+        if(view === 'home') title.innerHTML = '<h2>Browse Store</h2>';
+        else if(view === 'lib') title.innerHTML = '<h2>My Library</h2>';
+        else if(view === 'profile') title.innerHTML = '<h2>Developer Profile</h2>';
+        
+        renderGames();
     }
 
     function renderGames() {
         const grid = document.getElementById('gameGrid');
+        const search = document.getElementById('searchInput').value.toLowerCase();
         grid.innerHTML = '';
-        state.games.forEach(g => {
+        
+        let filtered = state.games;
+        
+        // Filter by View
+        if(state.currentView === 'lib') {
+            filtered = state.games.filter(g => state.user.library.includes(g.id) || g.cost === 0);
+        } else if(state.currentView === 'profile') {
+            filtered = state.games.filter(g => g.ownerId === state.user.id);
+        }
+
+        // Filter by Search
+        filtered = filtered.filter(g => g.title.toLowerCase().includes(search));
+
+        filtered.forEach(g => {
             const owned = state.user.library.includes(g.id) || g.cost === 0;
             const isOwner = g.ownerId === state.user.id;
             
-            // Dynamic Button Label
-            let btnLabel = "Unlock";
-            if (owned) {
-                if (g.type === 'web') btnLabel = "Play Game";
-                else if (g.type === 'android' || g.type === 'pc') btnLabel = "Download";
+            let btnText = "Unlock";
+            if(owned) {
+                btnText = g.type === 'web' ? "Play Game" : "Download";
             }
 
             const card = document.createElement('div');
             card.className = 'game-card';
             card.innerHTML = `
                 ${isOwner ? `<button class="delete-btn" onclick="deleteGame('${g.id}')">Delete</button>` : ''}
-                <img class="card-thumb" src="${g.thumb || 'https://via.placeholder.com/200'}">
+                <img class="card-thumb" src="${g.thumb || 'https://via.placeholder.com/300/0f172a/94a3b8?text=Nexus+Portal'}">
                 <div class="card-body">
                     <div class="flex justify-between items-center">
-                        <strong title="${g.type.toUpperCase()}">${g.title}</strong>
-                        <span style="font-size:0.8rem; color:var(--success)">${owned ? 'OWNED' : g.cost+' PTS'}</span>
+                        <strong title="Platform: ${g.type.toUpperCase()}">${g.title}</strong>
+                        <span style="font-size:0.75rem; color:var(--success)">${owned ? 'OWNED' : g.cost+' PTS'}</span>
                     </div>
                     <button class="btn btn-primary w-full" style="margin-top:10px" onclick="handleAction('${g.id}')">
-                        ${btnLabel}
+                        ${btnText}
                     </button>
                 </div>
             `;
             grid.appendChild(card);
         });
         updateGameCount();
-    }
-
-    function deleteGame(id) {
-        if(!confirm("Are you sure you want to delete this game?")) return;
-        state.games = state.games.filter(g => g.id !== id);
-        state.hasPendingChanges = true;
-        save();
-        renderGames();
-        updateVersionUI();
     }
 
     function handleAction(id) {
@@ -409,25 +446,21 @@ permalink: /
                 document.getElementById('gameIframe').src = g.web;
                 document.getElementById('player').classList.remove('hidden');
             } else {
-                // Download behavior
-                const a = document.createElement('a');
-                a.href = g.web;
-                a.target = "_blank";
-                a.click();
+                window.open(g.web, '_blank');
             }
         } else {
             if(state.user.points >= g.cost) {
                 state.user.points -= g.cost;
                 state.user.library.push(id);
                 save(); startApp();
-            } else alert("Not enough PTS");
+            } else alert("Insufficient points!");
         }
     }
 
     function saveGame() {
         const title = document.getElementById('upTitle').value;
-        const web = document.getElementById('upWeb').value;
-        if(!title || !web) return alert("Title and URL required");
+        const link = document.getElementById('upWeb').value;
+        if(!title || !link) return alert("Title and Link are required");
 
         const g = {
             id: crypto.randomUUID(),
@@ -436,14 +469,27 @@ permalink: /
             cost: parseInt(document.getElementById('upCost').value) || 0,
             thumb: document.getElementById('upThumb').value,
             type: document.getElementById('upType').value,
-            web: web
+            web: link
         };
         state.games.push(g);
         state.hasPendingChanges = true;
         save();
         closeModal();
-        renderGames();
+        renderGames(); // Refresh UI immediately
         updateVersionUI();
+    }
+
+    function deleteGame(id) {
+        if(!confirm("Delete this game from your local store?")) return;
+        state.games = state.games.filter(g => g.id !== id);
+        state.hasPendingChanges = true;
+        save();
+        renderGames(); // Refresh UI immediately
+        updateVersionUI();
+    }
+
+    function updateGameCount() {
+        document.getElementById('gameCount').innerText = state.games.length;
     }
 
     function updateVersionUI() {
@@ -452,10 +498,10 @@ permalink: /
         const syncBox = document.getElementById('syncBox');
         if(state.hasPendingChanges) {
             indicator.classList.add('pending');
-            if(syncBox) syncBox.classList.remove('hidden');
+            syncBox.classList.remove('hidden');
         } else {
             indicator.classList.remove('pending');
-            if(syncBox) syncBox.classList.add('hidden');
+            syncBox.classList.add('hidden');
         }
     }
 
@@ -464,7 +510,6 @@ permalink: /
         localStorage.setItem('np_games', JSON.stringify(state.games));
     }
     function logout() { localStorage.removeItem('np_logged'); location.reload(); }
-    function nav(v) { renderGames(); }
     function openUpload() { document.getElementById('uploadModal').classList.remove('hidden'); }
     function closeModal() { document.getElementById('uploadModal').classList.add('hidden'); }
     function closePlayer() { document.getElementById('player').classList.add('hidden'); document.getElementById('gameIframe').src = ''; }
